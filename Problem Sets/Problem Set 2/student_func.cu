@@ -127,20 +127,24 @@ void gaussian_blur(const unsigned char* const inputChannel,
                                         blockIdx.y * blockDim.y + threadIdx.y);
   //make sure we don't try and access memory outside the image
   //by having any threads mapped there return early
-  if (thread_2D_pos.x >= numCols || thread_2D_pos.y >= numRows)
+  if (thread_2D_pos.x >= numCols || thread_2D_pos.y >= numRows){
+    //printf("%d, %d \n", thread_2D_pos.x, numCols);
     return;
-    
+  }
+  //printf("%d, %d \n", thread_2D_pos.x, numCols);
   //For every value in the filter around the pixel (c, r)
   float result = 0.f;
   int r = thread_2D_pos.y;
   int c = thread_2D_pos.x;
+  //printf("%d\n", filterWidth);
+  //printf("%d, %d \n", r, c);
   for (int filter_r = -filterWidth/2; filter_r <= filterWidth/2; ++filter_r) {
     for (int filter_c = -filterWidth/2; filter_c <= filterWidth/2; ++filter_c) {
         //Find the global image position for this filter position
         //clamp to boundary of the image
 	int image_r = min(max(r + filter_r, 0), (numRows - 1));
         int image_c = min(max(c + filter_c, 0), (numCols - 1));
-
+        //printf("%d, %d \n", image_r, image_c);
         float image_value = inputChannel[image_r * numCols + image_c];
         float filter_value = filter[(filter_r + filterWidth/2) * filterWidth + filter_c + filterWidth/2];
 
@@ -260,12 +264,14 @@ void your_gaussian_blur(const uchar4 * const h_inputImageRGBA, uchar4 * const d_
                         const int filterWidth)
 {
   //TODO: Set reasonable block size (i.e., number of threads per block)
-  const dim3 blockSize(numRows*numCols/512 + 1, 1, 1);
+  int THREAD_X = 40;
+  int THREAD_Y = 19;
+  const dim3 blockSize(THREAD_X, THREAD_Y, 1);
 
   //TODO:
   //Compute correct grid size (i.e., number of blocks per kernel launch)
   //from the image size and and block size.
-  const dim3 gridSize(512, 1, 1);
+  const dim3 gridSize(numCols/THREAD_X + 1, numRows/THREAD_Y + 1, 1);
   //You must fill in the correct sizes for the blockSize and gridSize
   //currently only one block with one thread is being launched
 
